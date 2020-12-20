@@ -20,7 +20,6 @@ import glob
 Re = 5600
 
 # Information about the lethe data
-# path_to_data = "/home/audrey/Documents/graph/graph/"
 path_to_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
                "Data/csv_files_postprocessing/"
 prefix_name = "csvnoBreuer"  # experimental and Lethe data to plot should all be in this
@@ -41,6 +40,7 @@ index = 0
 # Scale factor for the curves
 # Suggestion : 2 for average velocities, 15 for reynolds normal stresses and 20 for reynolds shear stresses
 scale_factor = 2
+
 
 '''
 Example :
