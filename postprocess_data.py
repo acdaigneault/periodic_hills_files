@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-############################# FILL OUT THIS PART #################################
+################################################ FILL OUT THIS PART ###################################################
 
 # Reynolds number of the simulation (Currently available for Re = 5600 only)
 Re = 5600
@@ -19,7 +19,8 @@ Re = 5600
 # Information about the lethe data
 path_to_lethe_data = "/home/audrey/Documents/data_simulation/reynolds_5600/"
 file_names_lethe_data = ["data_5_short", "data_3"]  # add all lethe files in this list
-# *** NOTE : If writing csv, put file with more lines first.
+# *** NOTE : If writing csv, put file with more rows first because when concaterated columns, all data over the number
+#            of rows of the first column won't be added.
 
 # Information about the literature data
 path_to_literature_data = "/home/audrey/Documents/data_literature/reynolds_5600/"
@@ -27,14 +28,14 @@ path_to_literature_data = "/home/audrey/Documents/data_literature/reynolds_5600/
 # Saving file type ("graph" or "csv")
 file_type = "csv"
 
-# Path to save graphs
+# Path to save graphs or csv and prefix name
 path_to_save = "/home/audrey/Documents/graph/graph/"
 name_to_save = "csvfile"
 
 # x/h position with literature data files
 x_available = [1, 2, 3, 4, 5, 6, 7, 8]
 
-##################################################################################
+#######################################################################################################################
 
 
 def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, path_to_literature_data, path_to_save,
