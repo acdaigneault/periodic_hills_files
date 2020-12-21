@@ -22,20 +22,21 @@ Re = 5600
 # Information about the lethe data
 path_to_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
                "Data/csv_files_postprocessing/"
-prefix_name = "csvforgeometry"  # experimental and Lethe data to plot should all be in this
+prefix_name = "csvfile"  # literature and Lethe data to plot should all be in this
 
 # Path and name to save graphs (no extention)
 path_to_save = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/Data/" \
                "graph/"
-name_to_save = "test"  # If set to None, the name will be the type of data
+name_to_save = "dataingeometry"
 
 # Scale factor for the curves
-# Suggestions : 2 for average velocities, 15 for reynolds normal stresses and 20 for reynolds shear stresses
-scale_factors = [2, 2, 15, 15, 20]
+# Suggestions : 2/3 for average velocities, 15 for reynolds normal stresses and 20 for reynolds shear stresses
+scale_factors = [2, 3, 15, 15, 20]
 
 # Label for Lethe data for the legend
-# NOTE : make sure the number of labels are the same that the number of Lethe simulation data in csv files
-labels = ["Lethe - ~4M cells - half simulation", "Lethe - ~1M cells - full simulation"]
+# NOTE : make sure the number of labels are the same that the number of Lethe simulation data in csv files and
+#        and associated to the right data set
+labels = ["Lethe - ~1M cells - full simulation", "Lethe - ~4M cells - half simulation"]
 
 
 #######################################################################################################################
@@ -151,6 +152,9 @@ all_data_type = ["average_velocity_0", "average_velocity_1", "reynolds_normal_st
 x_labels = [r"$\langle u \rangle/u_{b}$", r"$\langle v \rangle/u_{b}$", r"$\langle u'u' \rangle/u_{b}^{2}$",
             r"$\langle v'v' \rangle/u_{b}^{2}$", r"$\langle u'v' \rangle/u_{b}^{2}$"]
 
+# x position to plot
+x_position = [0.05, 1, 2, 3, 4, 5, 6, 7, 8]
+
 # Associate filename to data type
 nb_of_files = len(glob.glob1(path_to_data, f"{prefix_name}*"))
 range_of_files = list(range(1, nb_of_files + 1))
@@ -187,51 +191,52 @@ for index, data_type in enumerate(all_data_type):
         data = pd.read_csv(path_to_data + name, sep=",")
         x = float(name.split("_x_")[1].split(".csv")[0])
 
-        # Verify if number of labels is right
-        nb_data = int(data.shape[1] / 2)
-        nb_lethe_data = nb_data - 2
-        assert len(labels) == nb_lethe_data, f"It seems to have {nb_lethe_data} sets of Lethe data and you gave " \
-                                             f"{len(labels)} labels, please verify your labels names or your csv files."
+        if x in x_position:
+            # Verify if number of labels is right
+            nb_data = int(data.shape[1] / 2)
+            nb_lethe_data = nb_data - 2
+            assert len(labels) == nb_lethe_data, f"It seems to have {nb_lethe_data} sets of Lethe data and you gave " \
+                                                 f"{len(labels)} labels, please verify your labels names or your csv files."
 
-        pos = 0
-        nb_curve = 0
-        # Scale data
-        for i in range(0, data.shape[1], 2):
-            data[data.columns[i]] = scale_factor * data[data.columns[i]] + x
+            pos = 0
+            nb_curve = 0
+            # Scale data
+            for i in range(0, data.shape[1], 2):
+                data[data.columns[i]] = scale_factor * data[data.columns[i]] + x
 
-            # Set lebels and colors (max 4 Lethe data sets)
-            colors = ["xkcd:crimson", "xkcd:bright blue", "xkcd:dark lavender", "xkcd:pale orange"]
-            if is_first_curve is True:
-                if "Rapp" in data.columns[i]:
-                    label = 'Experimental - Rapp2009'
-                    color = "xkcd:black"
-                    nb_curve += 1
-                elif "Breuer" in data.columns[i]:
-                    label = 'Simulation LESOCC - Breuer2009'
-                    color = "xkcd:green"
-                    nb_curve += 1
+                # Set lebels and colors (max 4 Lethe data sets)
+                colors = ["xkcd:crimson", "xkcd:bright blue", "xkcd:dark lavender", "xkcd:pale orange"]
+                if is_first_curve is True:
+                    if "Rapp" in data.columns[i]:
+                        label = 'Experimental - Rapp2009'
+                        color = "xkcd:black"
+                        nb_curve += 1
+                    elif "Breuer" in data.columns[i]:
+                        label = 'Simulation LESOCC - Breuer2009'
+                        color = "xkcd:green"
+                        nb_curve += 1
+                    else:
+                        label = labels[pos]
+                        color = colors[pos]
+                        pos += 1
+                        nb_curve += 1
+
+                    ax.plot(data[data.columns[i]], data[data.columns[i + 1]], "--", color=color, label=label,
+                            linewidth=0.75)
+
+                    # All first curves are plot
+                    if nb_curve == nb_data:
+                        is_first_curve = False
                 else:
-                    label = labels[pos]
-                    color = colors[pos]
-                    pos += 1
-                    nb_curve += 1
+                    if "Rapp" in data.columns[i]:
+                        color = "xkcd:black"
+                    elif "Breuer" in data.columns[i]:
+                        color = "xkcd:green"
+                    else:
+                        color = colors[pos]
+                        pos += 1
 
-                ax.plot(data[data.columns[i]], data[data.columns[i + 1]], "--", color=color, label=label,
-                        linewidth=0.75)
-
-                # All first curves are plot
-                if nb_curve == nb_data:
-                    is_first_curve = False
-            else:
-                if "Rapp" in data.columns[i]:
-                    color = "xkcd:black"
-                elif "Breuer" in data.columns[i]:
-                    color = "xkcd:green"
-                else:
-                    color = colors[pos]
-                    pos += 1
-
-                ax.plot(data[data.columns[i]], data[data.columns[i + 1]], "--", color=color, linewidth=0.75)
+                    ax.plot(data[data.columns[i]], data[data.columns[i + 1]], "--", color=color, linewidth=0.75)
 
     # Plot and save graph
     ax.set_title(data_type + " at Re = " + str(Re))

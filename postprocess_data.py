@@ -17,41 +17,56 @@ import matplotlib.pyplot as plt
 Re = 5600
 
 # Information about the lethe data
-path_to_lethe_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
-                     "Data/data_simulation/reynolds_5600/"
-file_names_lethe_data = ["data_3"]  # add all lethe files in this list
+path_to_lethe_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/" \
+                     "Periodic Hills Benchmark Case/Data/data_simulation/reynolds_5600/"
+file_names_lethe_data = ["data_3", "data_5_short"]  # add all lethe files in this list
 
-# Information about the literature data
+# Information about the literature data (
 path_to_literature_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/" \
                           "Periodic Hills Benchmark Case/Data/data_literature/reynolds_5600/"
 
-# Saving file type ("graph" or "csv")
-file_type = "csv"
+# Saving file type ("graph" for graph .png or "csv" for data .csv)
+file_type = "graph"
 
 # Path to save graphs or csv and prefix name
-path_to_save = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/Data/" \
-               "csv_files_postprocessing/"
-name_to_save = "csvwithextra"
+path_to_save = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/" \
+               "Periodic Hills Benchmark Case/Data/graph/graph_3_5_half/"
+name_to_save = "graph_all"
+
+# Label for Lethe data for the legend
+# NOTE : make sure the number of labels are the same that the number of files names of lethe data
+labels = ["Lethe - ~1M cells - full simulation", "Lethe - ~4M cells - half simulation"]
 
 # x/h position with literature data files
-x_available = [0.05, 1, 2, 3, 4, 5, 6, 7, 8]
+x_available = [0.05, 0.5, 1, 2, 3, 4, 5, 6, 7, 8]
+
+# Extra data extraction? (<w'w'>/<ub²> for x = 0.05, 2, 4 and 8 k/<ub²> for x = 0.05, 0.5, 1, 2, 3, 4, 5, 6, 7 and 8)
+extra = [True, False]
 
 
 #######################################################################################################################
 
 
 def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, path_to_literature_data, path_to_save,
-                  file_type):
+                  lebels, file_type, extra):
     file_nb = 0
 
     # Data type to plot
     all_data_type = ["average_velocity_0", "average_velocity_1", "reynolds_normal_stress_0",
                      "reynolds_normal_stress_1", "reynolds_shear_stress_uv"]
 
-
     # Associate x label to data type
     x_labels = [r"$\langle u \rangle/u_{b}$", r"$\langle v \rangle/u_{b}$", r"$\langle u'u' \rangle/u_{b}^{2}$",
-                r"$\langle v'v' \rangle/u_{b}^{2}$", r"$\langle <u'v' \rangle/u_{b}^{2}$"]
+                r"$\langle v'v' \rangle/u_{b}^{2}$", r"$\langle u'v' \rangle/u_{b}^{2}$"]
+
+    # If extra data type is/are True
+    if extra[0] is True:
+        all_data_type.append("reynolds_normal_stress_2")
+        x_labels.append(r"$\langle w'w' \rangle/u_{b}^{2}$")
+
+    if extra[1] is True:
+        all_data_type.append("turbulent_kinetic_energy")
+        x_labels.append(r"k/u_{b}^{2}$")
 
     # Reading Lethe data
     lethe_csv = []
@@ -132,6 +147,9 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
             [Breuer2009_data, Rapp2009_data] = literature_data_extraction(x_value, data_type, path_to_literature_data,
                                                                           Re)
 
+            if data_type == "reynolds_normal_stress_2" or data_type == "turbulent_kinetic_energy":
+                Breuer2009_data = extra_data_extraction(x_value, data_type, path_to_literature_data, Re)
+
             file_nb += 1
             if file_type == "graph":
                 # Plotting results
@@ -139,16 +157,18 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
 
                 # If there's Lethe data for this x and this data type
                 line_type = '-'  # solid line for the first set of data
-                for index, name in enumerate(file_names_lethe_data):
+                for index, name in enumerate(labels):
                     if data_to_plot[index] is not None:
-                        ax.plot(data_to_plot[index], y_to_plot[index], line_type, label='Lethe - ' + name)
+                        ax.plot(data_to_plot[index], y_to_plot[index], line_type, label=name)
                         line_type = '--'  # dashed lines for other Lethe data
 
                 if Breuer2009_data is not None:
-                    ax.plot(Breuer2009_data[0], Breuer2009_data[1], '--', color='xkcd:scarlet', label='Breuer2009')
+                    ax.plot(Breuer2009_data[0], Breuer2009_data[1], '--', color='xkcd:scarlet',
+                            label='Simulation LESOCC - Breuer 2009')
 
                 if Rapp2009_data is not None:
-                    ax.plot(Rapp2009_data[0], Rapp2009_data[1], '--', color='xkcd:black', label='Rapp2009')
+                    ax.plot(Rapp2009_data[0], Rapp2009_data[1], '--', color='xkcd:black',
+                            label='Experimental - Rapp 2009')
 
                 ax.set_title(data_type + " at Re = " + str(Re) + " at x = " + str(x_value))
                 ax.set_xlabel(x_labels[index_data_type])
@@ -187,7 +207,7 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
 
 
 # Literature data extraction of files associated with x/h
-def literature_data_extraction(x_value, data_type, path_to_literature_data, Re, extra):
+def literature_data_extraction(x_value, data_type, path_to_literature_data, Re):
     assert Re == 5600, "Currently available for Re = 5600 only."
 
     # Setting file number to x value
@@ -228,7 +248,6 @@ def literature_data_extraction(x_value, data_type, path_to_literature_data, Re, 
     else:
         literature_data_type = None
 
-
     # Getting literature data
     if literature_data_nb is not None and literature_data_type is not None:
         Rapp2009_csv = path_to_literature_data + "Rapp2009_UFR3-30/Rapp2009_" + str(literature_data_nb) + ".csv"
@@ -245,6 +264,67 @@ def literature_data_extraction(x_value, data_type, path_to_literature_data, Re, 
     return Breuer2009_data, Rapp2009_data
 
 
+def extra_data_extraction(x_value, data_type, path_to_literature_data, Re):
+    assert Re == 5600, "Currently available for Re = 5600 only."
+
+    # For <w'w'>/<ub²> 5 11 17 23
+    rns2_data_nb = None
+    if data_type == "reynolds_normal_stress_2":
+        if np.isclose(x_value, 0.05):
+            rns2_data_nb = "05"
+        elif x_value == 2:
+            rns2_data_nb = "11"
+        elif x_value == 4:
+            rns2_data_nb = "17"
+        elif x_value == 8:
+            rns2_data_nb = "23"
+
+        if rns2_data_nb is not None:
+            Breuer2009_csv = path_to_literature_data + "Breuer2009/Breuer2009_" + str(
+                rns2_data_nb) + ".csv"
+            Breuer2009_data = pd.read_csv(Breuer2009_csv, usecols=["x", "Curve" + str(rns2_data_nb)], sep=",")
+            Breuer2009_data = [np.array(Breuer2009_data["Curve" + str(rns2_data_nb)]), np.array(Breuer2009_data["x"])]
+
+    k_data_nb = None
+    if data_type == "turbulent_kinetic_energy":
+        if np.isclose(x_value, 0.05):
+            k_data_nb = "01"
+        elif np.isclose(x_value, 0.5):
+            k_data_nb = "02"
+        elif x_value == 1:
+            k_data_nb = "03"
+        elif x_value == 2:
+            k_data_nb = "04"
+        elif x_value == 3:
+            k_data_nb = "05"
+        elif x_value == 4:
+            k_data_nb = "06"
+        elif x_value == 5:
+            k_data_nb = "07"
+        elif x_value == 6:
+            k_data_nb = "08"
+        elif x_value == 7:
+            k_data_nb = "09"
+        elif x_value == 8:
+            k_data_nb = "10"
+
+        if k_data_nb is not None:
+            Breuer2009_csv = path_to_literature_data + "Breuer2009_UFR3-30/Breuer2009_3-30_" + str(
+                k_data_nb) + ".csv"
+            Breuer2009_data = pd.read_csv(Breuer2009_csv, usecols=["y/h", "k/u_b^2"], sep=";")
+            Breuer2009_data = [np.array(Breuer2009_data["k/u_b^2"]), np.array(Breuer2009_data["y/h"])]
+
+    if rns2_data_nb is None and k_data_nb is None:
+        Breuer2009_data = None
+
+    return Breuer2009_data
+
+
+# Verify the number of labels is right
+assert len(labels) == len(
+    file_names_lethe_data), f"It seems to have {len(file_names_lethe_data)} Lethe data files and you gave " \
+                            f"{len(labels)} labels, please verify your labels names."
+
 # Data to graph for each x available
 data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, path_to_literature_data,
-              path_to_save + name_to_save, file_type)
+              path_to_save + name_to_save, labels, file_type, extra)
