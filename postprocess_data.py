@@ -4,7 +4,7 @@ Author : Audrey Collard-Daigneault
 Date   : 07-12-2020
 Desc   : This code plots simulation data with Lethe and other data from literature
          got with Engauge Digitizer or text files.
-         (<u>/<ub>, <v>/<ub>, <u'u'>/<ub²>, <v'v'>/<ub²>, <w'w'>/<ub²>, <u'v'>/<ub²>)
+         (<u>/<ub>, <v>/<ub>, <u'u'>/<ub²>, <v'v'>/<ub²>, <u'v'>/<ub²>)
 """
 
 import pandas as pd
@@ -17,23 +17,25 @@ import matplotlib.pyplot as plt
 Re = 5600
 
 # Information about the lethe data
-path_to_lethe_data = "/home/audrey/Documents/data_simulation/reynolds_5600/"
-file_names_lethe_data = ["data_5_short", "data_3"]  # add all lethe files in this list
-# *** NOTE : If writing csv, put file with more rows first because when concaterated columns, all data over the number
-#            of rows of the first column won't be added.
+path_to_lethe_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
+                     "Data/data_simulation/reynolds_5600/"
+file_names_lethe_data = ["data_3"]  # add all lethe files in this list
 
 # Information about the literature data
-path_to_literature_data = "/home/audrey/Documents/data_literature/reynolds_5600/"
+path_to_literature_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/" \
+                          "Periodic Hills Benchmark Case/Data/data_literature/reynolds_5600/"
 
 # Saving file type ("graph" or "csv")
 file_type = "csv"
 
 # Path to save graphs or csv and prefix name
-path_to_save = "/home/audrey/Documents/graph/graph/"
-name_to_save = "csvfile"
+path_to_save = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/Data/" \
+               "csv_files_postprocessing/"
+name_to_save = "csvwithextra"
 
 # x/h position with literature data files
-x_available = [1, 2, 3, 4, 5, 6, 7, 8]
+x_available = [0.05, 1, 2, 3, 4, 5, 6, 7, 8]
+
 
 #######################################################################################################################
 
@@ -44,12 +46,12 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
 
     # Data type to plot
     all_data_type = ["average_velocity_0", "average_velocity_1", "reynolds_normal_stress_0",
-                     "reynolds_normal_stress_1", "reynolds_normal_stress_2", "reynolds_shear_stress_uv"]
+                     "reynolds_normal_stress_1", "reynolds_shear_stress_uv"]
+
 
     # Associate x label to data type
     x_labels = [r"$\langle u \rangle/u_{b}$", r"$\langle v \rangle/u_{b}$", r"$\langle u'u' \rangle/u_{b}^{2}$",
-                r"$\langle v'v' \rangle/u_{b}^{2}$", r"$\langle w'w' \rangle/u_{b}^{2}$",
-                r"$\langle <u'v' \rangle/u_{b}^{2}$"]
+                r"$\langle v'v' \rangle/u_{b}^{2}$", r"$\langle <u'v' \rangle/u_{b}^{2}$"]
 
     # Reading Lethe data
     lethe_csv = []
@@ -71,7 +73,7 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
 
                 # If there's no data at x_values, it does fing the 2 nearest x
                 nb_unique_x = len(np.unique(y_data["Points_0"]))
-                if nb_unique_x is not 1:
+                if nb_unique_x != 1:
                     # Find all x in tolerance = 0.1
                     if nb_unique_x < 1:
                         y_data = data.loc[(np.abs(data["Points_0"] - x_value) < 0.1)]
@@ -82,8 +84,7 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
                     index_sorted_delta = np.argsort(delta)
 
                     # Find the values min and max related to the x_value
-                    min_x_value = None
-                    max_x_value = None
+                    min_x_value = max_x_value = None
 
                     for index in index_sorted_delta:
                         if unique_values[index] < x_value and min_x_value is None:
@@ -158,18 +159,27 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
                 plt.close(fig)
                 ax.clear()
             elif file_type == "csv":
-                arrays_to_dataframe = pd.DataFrame()
+                # Find the max value of the array length
+                data_size = []
+                Breuer2009_data is not None and data_size.append(Breuer2009_data[0].size)
+                Rapp2009_data is not None and data_size.append(Rapp2009_data[0].size)
+                for i in range(0, len(file_names_lethe_data)):
+                    data_size.append(data_to_plot[i].size)
+
+                index_max_size = np.max(np.array(data_size))
+                arrays_to_dataframe = pd.DataFrame(index=range(1, index_max_size))
+
                 for i, lethe_file in enumerate(file_names_lethe_data):
                     arrays_to_dataframe.loc[:, data_type + "_" + lethe_file] = pd.Series(data_to_plot[i])
-                    arrays_to_dataframe.loc[:, "y/h_" + lethe_file] = pd.Series(y_to_plot[i])
+                    arrays_to_dataframe.loc[:, "y_" + lethe_file] = pd.Series(y_to_plot[i])
 
                 if Breuer2009_data is not None:
                     arrays_to_dataframe.loc[:, data_type + "_Breuer2009"] = pd.Series(Breuer2009_data[0])
-                    arrays_to_dataframe.loc[:, "y/h_Breuer2009"] = pd.Series(Breuer2009_data[1])
+                    arrays_to_dataframe.loc[:, "y_Breuer2009"] = pd.Series(Breuer2009_data[1])
 
                 if Rapp2009_data is not None:
                     arrays_to_dataframe.loc[:, data_type + "_Rapp2009"] = pd.Series(Rapp2009_data[0])
-                    arrays_to_dataframe.loc[:, "y/h_Rapp2009"] = pd.Series(Rapp2009_data[1])
+                    arrays_to_dataframe.loc[:, "y_Rapp2009"] = pd.Series(Rapp2009_data[1])
 
                 arrays_to_dataframe.to_csv(
                     path_to_save + "_" + str(file_nb).rjust(2, '0') + "_" + data_type + "_x_" + str(x_value) + ".csv",
@@ -177,90 +187,60 @@ def data_to_graph(x_available, Re, path_to_lethe_data, file_names_lethe_data, pa
 
 
 # Literature data extraction of files associated with x/h
-def literature_data_extraction(x_value, data_type, path_to_literature_data, Re):
-    if not Re == 5600:
-        assert Re == 5600, "Currently available for Re = 5600 only."
-
-    # Available x value for literature data
-    Breuer2009_x_positions = [0.5, 2, 4, 8]
-    Rapp2009_x_positions = [0.05, 0.5, 1, 2, 3, 4, 5, 6, 7, 8]
+def literature_data_extraction(x_value, data_type, path_to_literature_data, Re, extra):
+    assert Re == 5600, "Currently available for Re = 5600 only."
 
     # Setting file number to x value
     if np.isclose(x_value, 0.05):
-        Rapp2009_nb = "01"
+        literature_data_nb = "01"
     elif np.isclose(x_value, 0.5):
-        Breuer2009_nb = ["01", "02", "03", "04", "05", "06"]
-        Rapp2009_nb = "02"
+        literature_data_nb = "02"
     elif x_value == 1:
-        Rapp2009_nb = "03"
+        literature_data_nb = "03"
     elif x_value == 2:
-        Breuer2009_nb = ["07", "08", "09", "10", "11", "12"]
-        Rapp2009_nb = "04"
+        literature_data_nb = "04"
     elif x_value == 3:
-        Rapp2009_nb = "05"
+        literature_data_nb = "05"
     elif x_value == 4:
-        Breuer2009_nb = ["13", "14", "15", "16", "17", "18"]
-        Rapp2009_nb = "06"
+        literature_data_nb = "06"
     elif x_value == 5:
-        Rapp2009_nb = "07"
+        literature_data_nb = "07"
     elif x_value == 6:
-        Rapp2009_nb = "08"
+        literature_data_nb = "08"
     elif x_value == 7:
-        Rapp2009_nb = "09"
+        literature_data_nb = "09"
     elif x_value == 8:
-        Breuer2009_nb = ["19", "20", "21", "22", "23", "24"]
-        Rapp2009_nb = "10"
+        literature_data_nb = "10"
+    else:
+        literature_data_nb = None
 
     # Setting file number or column to data type
     if data_type == "average_velocity_0":
-        Breuer2009_index = 0
-        Rapp2009_column = "u/u_b"
+        literature_data_type = "u/u_b"
     elif data_type == "average_velocity_1":
-        Breuer2009_index = 1
-        Rapp2009_column = "v/u_b"
+        literature_data_type = "v/u_b"
     elif data_type == "reynolds_normal_stress_0":
-        Breuer2009_index = 2
-        Rapp2009_column = "u'u'/u_b^2"
+        literature_data_type = "u'u'/u_b^2"
     elif data_type == "reynolds_normal_stress_1":
-        Breuer2009_index = 3
-        Rapp2009_column = "v'v'/u_b^2"
-    elif data_type == "reynolds_normal_stress_2":
-        Breuer2009_index = 4
+        literature_data_type = "v'v'/u_b^2"
     elif data_type == "reynolds_shear_stress_uv":
-        Breuer2009_index = 5
-        Rapp2009_column = "u'v'/u_b^2"
-
-    # Setting False to index variables if not assigned
-    if 'Breuer2009_nb' not in locals():
-        Breuer2009_nb = None
-
-    if 'Rapp2009_nb' not in locals():
-        Rapp2009_nb = None
-
-    if 'Breuer2009_index' not in locals():
-        Breuer2009_index = None
-
-    if 'Rapp2009_column' not in locals():
-        Rapp2009_column = None
-
-    # Getting Breuer2009 data
-    if (x_value in Breuer2009_x_positions) and (Breuer2009_nb is not None) and (Breuer2009_index is not None):
-        Breuer2009_nb = Breuer2009_nb[Breuer2009_index]
-        Breuer2009_csv = path_to_literature_data + "Breuer2009/Breuer2009_" + str(
-            Breuer2009_nb) + ".csv"
-        Breuer2009_data = pd.read_csv(Breuer2009_csv, usecols=["x", "Curve" + str(Breuer2009_nb)], sep=",")
-        Breuer2009_data = [np.array(Breuer2009_data["Curve" + str(Breuer2009_nb)]), np.array(Breuer2009_data["x"])]
+        literature_data_type = "u'v'/u_b^2"
     else:
-        Breuer2009_data = None
+        literature_data_type = None
 
-    # Getting Rapp2009 data
-    if x_value in Rapp2009_x_positions and (Rapp2009_column is not None) and (Rapp2009_nb is not None):
-        Rapp2009_csv = path_to_literature_data + "Rapp2009/Rapp2009_" + str(Rapp2009_nb) + ".csv"
-        Rapp2009_data = pd.read_csv(Rapp2009_csv,
-                                    usecols=["y/h", Rapp2009_column], sep=",")
-        Rapp2009_data = [np.array(Rapp2009_data[Rapp2009_column]), np.array(Rapp2009_data["y/h"])]
+
+    # Getting literature data
+    if literature_data_nb is not None and literature_data_type is not None:
+        Rapp2009_csv = path_to_literature_data + "Rapp2009_UFR3-30/Rapp2009_" + str(literature_data_nb) + ".csv"
+        Rapp2009_data = pd.read_csv(Rapp2009_csv, usecols=["y/h", literature_data_type], sep=",")
+        Rapp2009_data = [np.array(Rapp2009_data[literature_data_type]), np.array(Rapp2009_data["y/h"])]
+
+        Breuer2009_csv = path_to_literature_data + "Breuer2009_UFR3-30/Breuer2009_3-30_" + str(
+            literature_data_nb) + ".csv"
+        Breuer2009_data = pd.read_csv(Breuer2009_csv, usecols=["y/h", literature_data_type], sep=";")
+        Breuer2009_data = [np.array(Breuer2009_data[literature_data_type]), np.array(Breuer2009_data["y/h"])]
     else:
-        Rapp2009_data = None
+        Rapp2009_data = Breuer2009_data = None
 
     return Breuer2009_data, Rapp2009_data
 

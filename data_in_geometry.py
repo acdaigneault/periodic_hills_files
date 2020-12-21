@@ -22,39 +22,21 @@ Re = 5600
 # Information about the lethe data
 path_to_data = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
                "Data/csv_files_postprocessing/"
-prefix_name = "csvnoBreuer"  # experimental and Lethe data to plot should all be in this
+prefix_name = "csvforgeometry"  # experimental and Lethe data to plot should all be in this
 
 # Path and name to save graphs (no extention)
 path_to_save = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/Data/" \
-               "postprocess_data_codes/"
-name_to_save = None  # If set to None, the name will be the type of data
-
-# Index of the type of data for this graph
-# Choose between those options : index = 0 : average_velocity_0,
-#                                index = 1 : average_velocity_1,
-#                                index = 2 : reynolds_normal_stress_0,
-#                                index = 3 : reynolds_normal_stress_1,
-#                                index = 4 : reynolds_shear_stress_uv
-index = 0
+               "graph/"
+name_to_save = "test"  # If set to None, the name will be the type of data
 
 # Scale factor for the curves
-# Suggestion : 2 for average velocities, 15 for reynolds normal stresses and 20 for reynolds shear stresses
-scale_factor = 2
+# Suggestions : 2 for average velocities, 15 for reynolds normal stresses and 20 for reynolds shear stresses
+scale_factors = [2, 2, 15, 15, 20]
 
+# Label for Lethe data for the legend
+# NOTE : make sure the number of labels are the same that the number of Lethe simulation data in csv files
+labels = ["Lethe - ~4M cells - half simulation", "Lethe - ~1M cells - full simulation"]
 
-'''
-Example :
-You want to plot data for average velocities in x direction, then index = 0 
-The prefix name of csv files generated with the postprocess_name.py is "csvnoBreuer", then prefix_name = "csvnoBreuer".
-Suggested scale factor is 2, then scale_factor = 2
-You don't have any clue of the name you want, then name_to_save = None, and the name with be average_velocity_0.png
-
-Note : 
-This code is not automated to plot all the data types at once with. 
-Also this way, it's possible to name all the files with different names or with a number.
-Be careful, this code currently supports plotting Rapp2009 experimental data with any Lethe data. 
-If there's Breuer2009 data, the code won't work (because Breuer data from the paper is not given for all x position)
-'''
 
 #######################################################################################################################
 
@@ -162,75 +144,104 @@ x_vector /= H
 y_bottom = y / H
 y_top = max_y * np.ones(len(x_vector)) / H
 
-# Plot data for the choosen data type
-fig, ax = plt.subplots()
-
-ax.plot(x_vector, y_bottom, '-k', linewidth=0.5)
-ax.plot(x_vector, y_top, '-k', linewidth=0.5)
-
-# Data type to plot
+# Data type to plot and label
 all_data_type = ["average_velocity_0", "average_velocity_1", "reynolds_normal_stress_0",
                  "reynolds_normal_stress_1", "reynolds_shear_stress_uv"]
 
 x_labels = [r"$\langle u \rangle/u_{b}$", r"$\langle v \rangle/u_{b}$", r"$\langle u'u' \rangle/u_{b}^{2}$",
             r"$\langle v'v' \rangle/u_{b}^{2}$", r"$\langle u'v' \rangle/u_{b}^{2}$"]
 
-name = all_data_type[index]
-label = x_labels[index]
-
-# The range of number of files to process
+# Associate filename to data type
 nb_of_files = len(glob.glob1(path_to_data, f"{prefix_name}*"))
 range_of_files = list(range(1, nb_of_files + 1))
 range_of_files = [str(int).rjust(2, '0') for int in range_of_files]
 
-# Store the curve of every data type related files into ax prior plotting
 filenames = []
-is_first_curve = False
+data_type_files = [[], [], [], [], []]
 for file_nb in range_of_files:
     # Search for file with prefix
-    file_name = [filename for filename in os.listdir(path_to_data)
-                 if filename.startswith(prefix_name + "_" + file_nb)][0]
-    data_type = file_name.split(prefix_name + "_" + file_nb + "_")[1].split("_x")[0]
-    x = float(file_name.split("_x_")[1].split(".csv")[0])
+    filename = [filename for filename in os.listdir(path_to_data)
+                if filename.startswith(prefix_name + "_" + file_nb)][0]
 
+    for i in range(0, len(all_data_type)):
+        if all_data_type[i] in filename:
+            data_type_files[i].append(filename)
+
+for index, data_type in enumerate(all_data_type):
+    # Plot data for the choosen data type
+    fig, ax = plt.subplots()
+
+    ax.plot(x_vector, y_bottom, '-k', linewidth=0.5)
+    ax.plot(x_vector, y_top, '-k', linewidth=0.5)
+
+    # Set info for this data type
+    x_label = x_labels[index]
+    scale_factor = scale_factors[index]
+
+    # Get the filenames for the data type
+    files = data_type_files[index]
+
+    is_first_curve = True
     # Process the file if the choosen data_type is in the file name
-    if data_type == name:
-        data = pd.read_csv(path_to_data + file_name, sep=",")
+    for name in files:
+        data = pd.read_csv(path_to_data + name, sep=",")
+        x = float(name.split("_x_")[1].split(".csv")[0])
 
-        for i in range(0, 6, 2):
+        # Verify if number of labels is right
+        nb_data = int(data.shape[1] / 2)
+        nb_lethe_data = nb_data - 2
+        assert len(labels) == nb_lethe_data, f"It seems to have {nb_lethe_data} sets of Lethe data and you gave " \
+                                             f"{len(labels)} labels, please verify your labels names or your csv files."
+
+        pos = 0
+        nb_curve = 0
+        # Scale data
+        for i in range(0, data.shape[1], 2):
             data[data.columns[i]] = scale_factor * data[data.columns[i]] + x
 
-        if is_first_curve is False:
-            ax.plot(data[data.columns[2]], data[data.columns[3]], '--', color='xkcd:crimson',
-                    label="Lethe - ~1M cells - full simulation",
-                    linewidth=0.75)
-            ax.plot(data[data.columns[0]], data[data.columns[1]], '--', color='xkcd:bright blue',
-                    label="Lethe - ~4M cells - half simulation",
-                    linewidth=0.75)
-            ax.plot(data[data.columns[4]], data[data.columns[5]], '--', color='xkcd:black', label="Experimental",
-                    linewidth=0.75)
-        else:
-            ax.plot(data[data.columns[2]], data[data.columns[3]], '--', color='xkcd:crimson',
-                    linewidth=0.75)
-            ax.plot(data[data.columns[0]], data[data.columns[1]], '--', color='xkcd:bright blue',
-                    linewidth=0.75)
-            ax.plot(data[data.columns[4]], data[data.columns[5]], '--', color='xkcd:black',
-                    linewidth=0.75)
+            # Set lebels and colors (max 4 Lethe data sets)
+            colors = ["xkcd:crimson", "xkcd:bright blue", "xkcd:dark lavender", "xkcd:pale orange"]
+            if is_first_curve is True:
+                if "Rapp" in data.columns[i]:
+                    label = 'Experimental - Rapp2009'
+                    color = "xkcd:black"
+                    nb_curve += 1
+                elif "Breuer" in data.columns[i]:
+                    label = 'Simulation LESOCC - Breuer2009'
+                    color = "xkcd:green"
+                    nb_curve += 1
+                else:
+                    label = labels[pos]
+                    color = colors[pos]
+                    pos += 1
+                    nb_curve += 1
 
-        is_first_curve = True
+                ax.plot(data[data.columns[i]], data[data.columns[i + 1]], "--", color=color, label=label,
+                        linewidth=0.75)
 
-if name_to_save is None:
-    name_to_save = name
+                # All first curves are plot
+                if nb_curve == nb_data:
+                    is_first_curve = False
+            else:
+                if "Rapp" in data.columns[i]:
+                    color = "xkcd:black"
+                elif "Breuer" in data.columns[i]:
+                    color = "xkcd:green"
+                else:
+                    color = colors[pos]
+                    pos += 1
 
-# Plot and save graph
-ax.set_title(name + " at Re = " + str(Re))
-ax.set_xlabel("$x/h$ ; " + str(scale_factor) + "$*$" + label)
-ax.set_ylabel("$y/h$")
-plt.vlines([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 0, 3.035, linestyle=':', color='xkcd:dark grey', linewidth=0.75)
-ax.set_ybound(-0.5, 4.5)
-plt.gca().set_aspect('equal', adjustable='box')
-ax.legend(fontsize='x-small')
-ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
-plt.savefig(path_to_save + name_to_save + ".png", dpi=300)
-plt.close(fig)
-ax.clear()
+                ax.plot(data[data.columns[i]], data[data.columns[i + 1]], "--", color=color, linewidth=0.75)
+
+    # Plot and save graph
+    ax.set_title(data_type + " at Re = " + str(Re))
+    ax.set_xlabel("$x/h$ ; " + str(scale_factor) + "$*$" + x_label)
+    ax.set_ylabel("$y/h$")
+    plt.vlines([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 0, max_y / H, linestyle=':', color='xkcd:dark grey', linewidth=0.75)
+    ax.set_ybound(-0.5, max_y / H + nb_data * 0.4)
+    plt.gca().set_aspect('equal', adjustable='box')
+    ax.legend(fontsize='x-small')
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    plt.savefig(path_to_save + name_to_save + "_" + data_type + ".png", dpi=300)
+    plt.close(fig)
+    ax.clear()

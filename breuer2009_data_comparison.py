@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 
 path_to_data_1 = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
-               "Data/data_literature/Breuer2009/"
+               "Data/data_literature/reynolds_5600/Breuer2009/"
 path_to_data_2 = "C:/Users/Acdai/OneDrive - polymtl.ca/Polytechnique/Session A2020/Periodic Hills Benchmark Case/" \
-               "Data/data_literature/Breuer2009_UFR3-30/"
+               "Data/data_literature/reynolds_5600/Breuer2009_UFR3-30/"
 
 filename_1 = "Breuer2009"
 filename_2 = "Breuer2009_3-30"
