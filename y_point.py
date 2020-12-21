@@ -53,7 +53,7 @@ y_plus_per_file = []
 x_per_file = []
 
 # Reading Lethe data and sort them by x values
-for lethe_file in file_names_lethe_data:
+for file_nb, lethe_file in enumerate(file_names_lethe_data):
     lethe_csv = path_to_lethe_data + lethe_file + ".csv"
     lethe_data = pd.read_csv(lethe_csv, usecols=["Points_0", "Points_1", "average_velocity_0"], sep=",").sort_values(
         "Points_0")
@@ -62,10 +62,12 @@ for lethe_file in file_names_lethe_data:
     nb_z_point = []
     point_y = []
     point_x = []
+    unique_x = np.unique(lethe_data["Points_0"])
 
-    for x in np.unique(lethe_data["Points_0"]):
+    for x in unique_x:
         x_data = lethe_data.loc[(np.abs(lethe_data["Points_0"] - x) < 1e-6)].sort_values("Points_1")
 
+        # Get the 3 points in y direction for Lagrange polynome
         count = 0
         y_value = -1
         for i, y in x_data["Points_1"].iteritems():
@@ -83,12 +85,21 @@ for lethe_file in file_names_lethe_data:
 
             y_value = y
 
+        # Progression
+        max_x = np.max(unique_x)
+        print(
+            f"Estimated progression {round((x + file_nb * max_x) / ((file_nb + 1) * max_x) * 100, 2)}%")
+
+    # Average time-averaged values in z direction
     u_values = np.array(u_values) / np.array(nb_z_point)
+
+    # Initiate variables
     dudy = []
     viscosity = 1.78571E-04
     y_plus = []
     x = []
 
+    # Calculate du/dy at wall with Lagrange polynome derivatives and the non-dimensional wall distance
     for i in range(0, len(u_values), 3):
         poly = lagrange(np.array(point_y[i:i + 3]), np.array(u_values[i:i + 3]))
         poly_diff = np.polyder(poly)
@@ -124,7 +135,7 @@ if file_type == "graph":
 elif file_type == "csv":
     # Find the max value of the array length
     data_size = []
-    data_size.append(literature_data[0].size)
+    data_size.append(literature_data[0].shape[0])
     for i in range(0, len(file_names_lethe_data)):
         data_size.append(len(y_plus_per_file[i]))
 
